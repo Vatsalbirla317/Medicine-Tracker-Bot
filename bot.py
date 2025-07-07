@@ -1,7 +1,9 @@
 import logging
 import os
+import threading  # ✅ Added for dummy HTTP server
 from datetime import time
 from zoneinfo import ZoneInfo
+from http.server import HTTPServer, BaseHTTPRequestHandler  # ✅ Added for dummy HTTP server
 
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -10,6 +12,18 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GROUP_CHAT_ID = str(os.environ.get("GROUP_CHAT_ID"))
 LOCAL_TIMEZONE = ZoneInfo("Asia/Kolkata")
+
+# --- Dummy HTTP Server to bind port (Render requirement) ---
+class DummyServerHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b" Bot is running on Render")
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 10000))  # Render expects a service to bind to PORT
+    server = HTTPServer(('0.0.0.0', port), DummyServerHandler)
+    server.serve_forever()
 
 # --- Bot's Memory (Upgraded) ---
 # Instead of True/False, we store None or a dictionary with details.
@@ -105,7 +119,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
                 bot_memory["morning_dose"] = log_details
                 remove_job_if_exists("morning_follow_up", context)
                 await update.message.reply_text(f"✅ Morning medicine confirmed by {user.first_name} at {confirmation_time}.")
-            else: # This is the new logic for an already-logged dose
+            else:
                 await update.message.reply_text(f"FYI, the morning dose was already logged by {bot_memory['morning_dose']['by']} at {bot_memory['morning_dose']['at']}.")
 
         elif "evening" in message_text:
@@ -114,7 +128,7 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
                 bot_memory["evening_dose"] = log_details
                 remove_job_if_exists("evening_follow_up", context)
                 await update.message.reply_text(f"🌙 Evening medicine confirmed by {user.first_name} at {confirmation_time}.")
-            else: # New logic
+            else:
                 await update.message.reply_text(f"FYI, the evening dose was already logged by {bot_memory['evening_dose']['by']} at {bot_memory['evening_dose']['at']}.")
         
         if not keyword_used:
@@ -123,14 +137,14 @@ async def handle_group_messages(update: Update, context: ContextTypes.DEFAULT_TY
                     bot_memory["morning_dose"] = log_details
                     remove_job_if_exists("morning_follow_up", context)
                     await update.message.reply_text(f"✅ Morning medicine confirmed by {user.first_name} at {confirmation_time}.")
-                else: # New logic
+                else:
                     await update.message.reply_text(f"FYI, the morning dose was already logged by {bot_memory['morning_dose']['by']} at {bot_memory['morning_dose']['at']}.")
             else:
                 if bot_memory["evening_dose"] is None:
                     bot_memory["evening_dose"] = log_details
                     remove_job_if_exists("evening_follow_up", context)
                     await update.message.reply_text(f"🌙 Evening medicine confirmed by {user.first_name} at {confirmation_time}.")
-                else: # New logic
+                else:
                     await update.message.reply_text(f"FYI, the evening dose was already logged by {bot_memory['evening_dose']['by']} at {bot_memory['evening_dose']['at']}.")
 
 # This function is updated to reset the memory to None
@@ -157,6 +171,9 @@ def main():
     if not TELEGRAM_TOKEN or not GROUP_CHAT_ID:
         logger.error("FATAL: TELEGRAM_TOKEN or GROUP_CHAT_ID environment variable not set!")
         return
+
+    # ✅ Start the dummy HTTP server in a background thread
+    threading.Thread(target=run_dummy_server, daemon=True).start()
 
     application = Application.builder().token(TELEGRAM_TOKEN).build()
     
