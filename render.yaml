@@ -3,7 +3,7 @@ services:
     name: telegram-bot
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
+    startCommand: python bot.py
     envVars:
       - key: TELEGRAM_TOKEN
         value: 7602561602:AAEsPOV_bnNr-54aPiprBkCYYWHN3HXurck
