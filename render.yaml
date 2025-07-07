@@ -9,3 +9,5 @@ services:
         value: 7602561602:AAEsPOV_bnNr-54aPiprBkCYYWHN3HXurck
       - key: GROUP_CHAT_ID
         value: -1002738262584
+      - key: PORT
+        value: 10000
