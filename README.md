@@ -34,9 +34,10 @@ A Telegram bot that automates daily medicine reminders and status tracking for f
 - A group/chat ID where the bot is a member
 - Optionally: a Render account to deploy
 
-### 🛠️ Local Setup
+## 🛠️ Local Setup
 
-1. **Clone the repo**:
-   ```bash
-   git clone https://github.com/Vatsalbirla317/Medicine-Tracker-Bot.git
-   cd Medicine-Tracker-Bot
+### 📦 Install dependencies
+
+```bash
+pip install -r requirements.txt
+
